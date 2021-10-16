@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 import Score from './models/score.js';
 import CCGameSession from './models/ccGameSession.js';
 
@@ -114,6 +116,14 @@ export const checkinCC = async (req, res) => {
         console.error(e);
         res.status(400).send("Error: invalid checkin.");
     }
+}
+
+export const getAndySubs = async (req, res) => {
+    let url = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=UCgd3Z7ShK-HME-gCxC-OaTQ&key=${process.env.YOUTUBE_API_KEY}`;
+    let options = { method: 'GET' };
+    let thing = fetch(url, options)
+    .then((r) => r.json())
+    .then(json => res.status(200).json(json));
 }
 
 export const teapot = async (req, res) => {
