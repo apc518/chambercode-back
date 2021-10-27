@@ -1,7 +1,11 @@
 import fetch from 'node-fetch';
+import EmailValidator from 'email-deep-validator';
+import nodemailer from 'nodemailer';
 
 import Score from './models/score.js';
 import CCGameSession from './models/ccGameSession.js';
+
+const emailValidator = new EmailValidator({verifyMailbox: false});
 
 export const getLeaderboard = async (req, res) => {
     try{
@@ -124,6 +128,67 @@ export const getAndySubs = async (req, res) => {
     let thing = fetch(url, options)
     .then((r) => r.json())
     .then(json => res.status(200).json(json));
+}
+
+export const postContact = async (req, res) => {
+    try{
+        // check for correct request format (correct keys)
+        const correctKeys = ["email", "subject", "message"].sort();
+        const inputKeys = Object.keys(req.body).sort();
+        if(JSON.stringify(correctKeys) !== JSON.stringify(inputKeys)){
+            throw new Error("Invalid parameters");
+        }
+
+        // validate email address
+        const { wellFormed, validDomain } = await emailValidator.verify(req.body.email);
+        console.log(wellFormed, validDomain);
+
+        // if email is valid
+        if(wellFormed && validDomain){
+            // send an email to myself (using a dedicated server email, not my personal email of course)
+
+            // authorize
+            let transporter = nodemailer.createTransport({
+                service: process.env.SERVER_EMAIL_SERVICE,
+                auth: {
+                    user: process.env.SERVER_EMAIL,
+                    pass: process.env.SERVER_EMAIL_PASS
+                }
+            });
+
+            // represent email as object
+            let mailOptions = {
+                from: process.env.SERVER_EMAIL,
+                to: process.env.SERVER_EMAIL,
+                subject: req.body.subject,
+                text: `from: ${req.body.email}\n\n${req.body.message}`
+            }
+
+            // send email
+            transporter.sendMail(mailOptions, (err, info) => {
+                if(err){
+                    console.log(err);
+                }
+                else{
+                    console.log(`Email sent: ${info.response}`);
+                }
+            })
+
+            // give an OK response
+            res.status(200).send();
+        }
+        else{
+            throw new Error("Invalid email addresss");
+        }
+    }
+    catch(e){
+        console.log("POST failed.", e);
+        res.status(400).send("POST failed.");
+    }
+}
+
+export const home = async (req, res) => {
+    res.status(200).send("OK");
 }
 
 export const teapot = async (req, res) => {
