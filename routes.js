@@ -8,7 +8,7 @@ router.get('/leaderboard', getLeaderboard);
 router.post('/leaderboard', postScore);
 router.get('/context-collapse-token', getCCToken);
 router.post('/context-collapse-checkin', checkinCC);
-router.get('/youtubestats/andy/subscribers', getAndySubs);
+router.get('/youtubestats/andy', getAndySubs);
 router.post('/contact', postContact);
 router.get('/teapotcoffee', teapot);
 
