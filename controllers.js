@@ -9,14 +9,25 @@ const emailValidator = new EmailValidator({verifyMailbox: false});
 
 export const getLeaderboard = async (req, res) => {
     try{
+        const pageSize = 10;
+        let pageNum;
+        console.log(typeof req.query.page);
+        if(typeof req.query.page !== 'undefined'){
+            pageNum = parseInt(req.query.page);
+        }
+        else{
+            pageNum = 1;
+        }
+        const limit = pageNum * pageSize;
+
         // puts all the scores it finds into a list, sorted by score descending
-        const easyLeaderboard = await Score.find({difficulty: "easy"}, null, {limit: 10}).sort({score: -1});
-        const normalLeaderboard = await Score.find({difficulty: "normal"}, null, {limit: 10}).sort({score: -1});
-        const hardLeaderboard = await Score.find({difficulty: "hard"}, null, {limit: 10}).sort({score: -1});
+        const easyLeaderboard = await Score.find({difficulty: "easy"}, null, {limit: limit}).sort({score: -1});
+        const normalLeaderboard = await Score.find({difficulty: "normal"}, null, {limit: limit}).sort({score: -1});
+        const hardLeaderboard = await Score.find({difficulty: "hard"}, null, {limit: limit}).sort({score: -1});
         res.status(200).json({
-            easy: easyLeaderboard,
-            normal: normalLeaderboard,
-            hard: hardLeaderboard
+            easy: easyLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
+            normal: normalLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
+            hard: hardLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize)
         });
     }
     catch(e){
@@ -37,7 +48,9 @@ export const postScore = async (req, res) => {
         if(!newScore.difficulty) throw new Error("no difficulty provided.");
         if(!newScore.token) throw new Error("no token provided.");
 
-        if(newScore.name.length > 30) throw new Error("name provided is too long.");
+        const NAME_MAX_LENGTH = 30;
+
+        if(newScore.name.length > NAME_MAX_LENGTH) throw new Error(`name provided is longer than ${NAME_MAX_LENGTH} characters.`);
         if(["easy", "normal", "hard"].indexOf(newScore.difficulty.toLowerCase()) < 0)
             throw new Error("difficulty provided is invalid.");
         if(!Number.isInteger(newScore.score) || newScore.score < 0 || newScore.score > 100_000_000)
