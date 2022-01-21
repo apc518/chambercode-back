@@ -11,7 +11,7 @@ export const getLeaderboard = async (req, res) => {
     try{
         const pageSize = 10;
         let pageNum;
-        console.log(typeof req.query.page);
+        // console.log(typeof req.query.page);
         if(typeof req.query.page !== 'undefined'){
             pageNum = parseInt(req.query.page);
         }
@@ -21,9 +21,9 @@ export const getLeaderboard = async (req, res) => {
         const limit = pageNum * pageSize;
 
         // puts all the scores it finds into a list, sorted by score descending
-        const easyLeaderboard = await Score.find({difficulty: "easy"}, null, {limit: limit}).sort({score: -1});
-        const normalLeaderboard = await Score.find({difficulty: "normal"}, null, {limit: limit}).sort({score: -1});
-        const hardLeaderboard = await Score.find({difficulty: "hard"}, null, {limit: limit}).sort({score: -1});
+        const easyLeaderboard = await Score.find({difficulty: "easy"}, "-deletionToken", {limit: limit}).sort({score: -1});
+        const normalLeaderboard = await Score.find({difficulty: "normal"}, "-deletionToken", {limit: limit}).sort({score: -1});
+        const hardLeaderboard = await Score.find({difficulty: "hard"}, "-deletionToken", {limit: limit}).sort({score: -1});
         res.status(200).json({
             easy: easyLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
             normal: normalLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
@@ -91,13 +91,25 @@ export const postScore = async (req, res) => {
     }
 }
 
+export const deleteScore = async (req, res) => {
+    const { difficulty, id } = req.params;
+    const deletionToken = req.body.deletionToken;
+    console.log(difficulty, id, deletionToken);
+
+    let targetScore = await Score.findById(id);
+    console.log(targetScore);
+    if(deletionToken && targetScore.deletionToken === deletionToken){
+        await Score.deleteOne({ _id: id });
+        res.status(200).json(targetScore);
+    }
+    else{
+        res.status(403).send("Incorrect or insufficient credentials were provided.");
+    }
+}
+
 export const getCCToken = async (req, res) => {
     try{
-        let s = "";
-        let chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        for(let i = 0; i < 64; i++){
-            s += chars[Math.floor(Math.random() * chars.length)];
-        }
+        let s = crypto.randomBytes(16).toString('hex');
 
         const ccGameSession = new CCGameSession({
             token: s,
