@@ -4,6 +4,7 @@ import nodemailer from 'nodemailer';
 
 import Score from './models/score.js';
 import CCGameSession from './models/ccGameSession.js';
+import crypto from 'crypto';
 
 const emailValidator = new EmailValidator({verifyMailbox: false});
 
