@@ -4,7 +4,6 @@ const score =  mongoose.Schema({
     score: Number,
     name: String,
     difficulty: String,
-    token: String,
     deletionToken: String // provided clientside, not by user input though
 }, { timestamps: true });
 

@@ -22,9 +22,9 @@ export const getLeaderboard = async (req, res) => {
         const limit = pageNum * pageSize;
 
         // puts all the scores it finds into a list, sorted by score descending
-        const easyLeaderboard = await Score.find({difficulty: "easy"}, "-deletionToken", {limit: limit}).sort({score: -1});
-        const normalLeaderboard = await Score.find({difficulty: "normal"}, "-deletionToken", {limit: limit}).sort({score: -1});
-        const hardLeaderboard = await Score.find({difficulty: "hard"}, "-deletionToken", {limit: limit}).sort({score: -1});
+        const easyLeaderboard = await Score.find({difficulty: "easy"}, "-deletionToken -token", {limit: limit}).sort({score: -1});
+        const normalLeaderboard = await Score.find({difficulty: "normal"}, "-deletionToken -token", {limit: limit}).sort({score: -1});
+        const hardLeaderboard = await Score.find({difficulty: "hard"}, "-deletionToken -token", {limit: limit}).sort({score: -1});
         res.status(200).json({
             easy: easyLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
             normal: normalLeaderboard.slice((pageNum - 1) * pageSize, pageNum * pageSize),
@@ -39,15 +39,12 @@ export const getLeaderboard = async (req, res) => {
 
 export const postScore = async (req, res) => {
     try{
-        if(Object.keys(req.body).length !== Object.keys(Score.schema.obj).length)
-            throw new Error("Invalid number of parameters.");
-
         const newScore = new Score(req.body);
 
         if(!newScore.name) throw new Error("no name provided.");
         if(newScore.score == null) throw new Error("no score provided.");
         if(!newScore.difficulty) throw new Error("no difficulty provided.");
-        if(!newScore.token) throw new Error("no token provided.");
+        if(!req.body.token) throw new Error("no token provided.");
 
         const NAME_MAX_LENGTH = 30;
 
@@ -63,9 +60,9 @@ export const postScore = async (req, res) => {
                 throw new Error("name has invalid characters. Use only letters, numbers, and the following symbols: -_+=~!@#$%^&*");
         }
 
-        const session = await CCGameSession.findOne({token: newScore.token});
+        const session = await CCGameSession.findOne({token: req.body.token});
 
-        console.log(session);
+        // console.log(session);
 
         if(!session) throw new Error("No valid token provided.");
 
@@ -95,10 +92,10 @@ export const postScore = async (req, res) => {
 export const deleteScore = async (req, res) => {
     const { difficulty, id } = req.params;
     const deletionToken = req.body.deletionToken;
-    console.log(difficulty, id, deletionToken);
+    // console.log(difficulty, id, deletionToken);
 
     let targetScore = await Score.findById(id);
-    console.log(targetScore);
+    // console.log(targetScore);
     if(deletionToken && targetScore.deletionToken === deletionToken){
         await Score.deleteOne({ _id: id });
         res.status(200).json(targetScore);
@@ -167,7 +164,7 @@ export const postContact = async (req, res) => {
 
         // validate email address
         const { wellFormed, validDomain } = await emailValidator.verify(req.body.email);
-        console.log(wellFormed, validDomain);
+        // console.log(wellFormed, validDomain);
 
         // if email is valid
         if(wellFormed && validDomain){
